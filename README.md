@@ -8,7 +8,8 @@ Application de chatbot avec authentification, historique par utilisateur et conv
 - Authentification utilisateur avec Firebase Authentication.
 - Vérification de la session au démarrage et déconnexion.
 - Conversations multiples, renommage, suppression et historique persistant.
-- Intégration Gemini avec `--dart-define=GEMINI_API_KEY=VOTRE_CLE`.
+- Réponses Gemini avec `--dart-define=GEMINI_API_KEY=VOTRE_CLE`; le backend REST est utilisé en repli.
+- Suggestions de démarrage, animations légères, indicateur de génération et erreurs visibles dans le fil.
 - Consommation du backend REST Spring Boot avec jeton Bearer.
 - Service SOAP JAX-WS avec deux opérations.
 - Firebase Authentication pour l’inscription, la connexion et la session.
@@ -83,6 +84,8 @@ mvn spring-boot:run
 - OpenAPI statique: `docs/openapi.yaml`
 - Les endpoints `/api/**` exigent `Authorization: Bearer <token>`.
 - `/api/chat` accepte POST avec `{ "message": "Bonjour", "history": [] }`.
+- Le endpoint de chat REST actuel est une démonstration echo ; configurez Gemini pour des réponses génératives.
+- Si aucun moteur ne répond, le message reste affiché avec une explication au lieu de disparaître.
 
 ## Backend SOAP
 
@@ -95,6 +98,11 @@ mvn exec:java -Dexec.mainClass=tn.chatboot.SoapServer
 - WSDL dynamique: `http://localhost:8181/chat?wsdl`
 - WSDL livré: `docs/chatservice.wsdl`
 - Opérations: `sendMessage`, `getConversationSummary`.
+
+## Rapport technique
+
+Le rapport du projet est disponible en LaTeX dans `docs/rapport_chatboot.tex` et en
+PDF dans `docs/rapport_chatboot.pdf`.
 
 ## Tests
 

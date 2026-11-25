@@ -1,0 +1,317 @@
+\documentclass[10pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage{titlesec}
+
+\geometry{top=2.0cm,bottom=2.0cm,left=2.15cm,right=2.15cm}
+\definecolor{forest}{HTML}{246B56}
+\definecolor{orange}{HTML}{E78355}
+\definecolor{ink}{HTML}{252923}
+\definecolor{muted}{HTML}{666D64}
+\definecolor{paper}{HTML}{F7F5EF}
+\definecolor{codebg}{HTML}{F3F4F1}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=forest,
+  urlcolor=forest,
+  pdftitle={Chatboot -- Rapport de projet},
+  pdfauthor={Équipe projet Chatboot},
+  pdfsubject={Application de conversation Flutter et services SOA}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textcolor{forest}{\textbf{CHATBOOT}}}
+\fancyhead[R]{\textcolor{muted}{Rapport de projet}}
+\fancyfoot[C]{\textcolor{muted}{\thepage}}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\footrulewidth}{0pt}
+\setlength{\headheight}{14pt}
+\setlist[itemize]{leftmargin=1.2em,itemsep=3pt,topsep=4pt}
+\setlist[enumerate]{leftmargin=1.5em,itemsep=3pt,topsep=4pt}
+\titleformat{\section}{\large\bfseries\color{forest}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries\color{ink}}{\thesubsection}{0.6em}{}
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{codebg},
+  breaklines=true,
+  columns=fullflexible,
+  showstringspaces=false
+}
+\newcommand{\callout}[1]{%
+  \par\smallskip\noindent
+  \colorbox{paper}{\parbox{\dimexpr\linewidth-2\fboxsep\relax}{#1}}%
+  \par\smallskip
+}
+\newcommand{\file}[1]{\texttt{\detokenize{#1}}}
+
+\begin{document}
+
+\begin{titlepage}
+\thispagestyle{empty}
+\pagecolor{paper}
+\vspace*{1.4cm}
+\noindent\colorbox{forest}{\parbox{\dimexpr\textwidth-2\fboxsep\relax}{%
+  \vspace{0.35cm}\hspace{0.25cm}\textcolor{white}{\large\textbf{PROJET FLUTTER \;|\; ARCHITECTURE SOA}}
+  \vspace{0.35cm}}}
+
+\vspace{2.1cm}
+{\Huge\bfseries\color{ink} Chatboot\par}
+\vspace{0.35cm}
+{\LARGE\color{forest} Assistant conversationnel multiplateforme\par}
+\vspace{0.8cm}
+{\large\color{muted} Rapport technique et fonctionnel\par}
+
+\vspace{1.8cm}
+\color{orange}\rule{0.22\textwidth}{3pt}
+\vspace{0.65cm}
+
+\begin{minipage}{0.82\textwidth}
+\large
+Chatboot réunit une interface Flutter, une authentification Firebase et des services REST et SOAP. Le projet illustre la conception d'un client conversationnel, la gestion d'un historique utilisateur et l'intégration de services indépendants.
+\end{minipage}
+
+\vfill
+\begin{tabularx}{\textwidth}{@{}p{4.3cm}X@{}}
+\textbf{Technologies principales} & Flutter / Dart, Firebase Authentication, Spring Boot, MongoDB, JAX-WS \\
+\textbf{Périmètre} & Application Web et Android, API REST et service SOAP \\
+\textbf{Date du rapport} & 25 novembre 2026 \\
+\end{tabularx}
+\vspace{1.1cm}
+\pagecolor{white}
+\end{titlepage}
+
+\setcounter{page}{2}
+\small
+\section*{1. Contexte, besoins et fonctionnalités}
+\addcontentsline{toc}{section}{1. Contexte, besoins et fonctionnalités}
+
+Chatboot est un assistant conversationnel multiplateforme qui combine une interface Flutter, une authentification Firebase et des services REST et SOAP. Son objectif pédagogique est de séparer l'expérience utilisateur, la gestion d'identité, la logique de conversation et le stockage.
+
+\subsection*{Problématique et objectifs}
+Le parcours d'une conversation dépend de plusieurs opérations asynchrones : restaurer la session, charger les fils, envoyer le texte, obtenir une réponse et synchroniser l'historique. Une panne réseau ne doit ni effacer le texte saisi ni laisser l'utilisateur sans explication.
+\begin{itemize}
+  \item authentifier l'utilisateur et isoler son historique ;
+  \item gérer plusieurs conversations et leurs messages ;
+  \item proposer une interface adaptative avec des erreurs visibles ;
+  \item démontrer des échanges REST, SOAP et une génération Gemini.
+\end{itemize}
+
+\subsection*{Fonctions et parcours}
+\begin{tabularx}{\textwidth}{@{}p{0.27\textwidth}X@{}}
+\toprule
+\textbf{Fonction} & \textbf{Comportement} \\
+\midrule
+Compte & Inscription, connexion et restauration de session Firebase. \\
+Fils & Création, sélection, renommage, suppression et historique par utilisateur. \\
+Échange & Message utilisateur immédiat, réponse IA ou erreur explicite. \\
+Interface & Barre latérale sur ordinateur, tiroir et actions accessibles sur mobile. \\
+Suggestions & Cartes interactives qui préremplissent le champ de message. \\
+\bottomrule
+\end{tabularx}
+
+\subsection*{Cycle nominal}
+\begin{enumerate}
+  \item authentification et chargement de l'historique ;
+  \item création/sélection du fil et rédaction du message ;
+  \item affichage immédiat, génération de la réponse, puis synchronisation.
+\end{enumerate}
+
+\subsection*{Expérience et réactivité}
+La palette claire, le vert d'action et l'accent orange composent un style sobre. Les transitions d'accueil et de messages, l'indicateur « Chatboot réfléchit » et le défilement automatique rendent l'activité visible.
+
+\callout{\textbf{Résilience :} le message reste dans le fil si un moteur échoue. Sans serveur de persistance, les données locales ne sont pas garanties après rechargement.}
+
+\newpage
+\normalsize
+\section*{3. Architecture générale}
+\addcontentsline{toc}{section}{3. Architecture générale}
+
+\subsection*{Vue logique}
+\begin{center}
+\colorbox{paper}{\parbox{0.93\textwidth}{\centering
+\vspace{0.35cm}
+\textbf{Utilisateur}\\[0.15cm]
+$\downarrow$\\[0.15cm]
+\textbf{Client Flutter} \quad AuthScreen \;|\; ChatScreen \;|\; AppState\\[0.15cm]
+$\downarrow$ \hspace{1cm} $\searrow$\\[0.15cm]
+\textbf{Firebase Auth} \hspace{1.4cm} \textbf{Gemini API}\\[0.15cm]
+$\downarrow$\\[0.15cm]
+\textbf{API REST Spring Boot} $\longleftrightarrow$ \textbf{MongoDB Atlas}\\[0.15cm]
+$\downarrow$\\[0.15cm]
+\textbf{Service SOAP JAX-WS (démonstration)}
+\vspace{0.35cm}}}
+\end{center}
+
+\subsection*{Responsabilités des composants}
+\begin{tabularx}{\textwidth}{@{}p{0.24\textwidth}X@{}}
+\toprule
+\textbf{Composant} & \textbf{Responsabilité} \\
+\midrule
+Flutter & Interface, formulaires, navigation responsive, état conversationnel et appels HTTP. \\
+Provider / AppState & État partagé : identité courante, conversations sélectionnées et indicateur d'envoi. \\
+Firebase Authentication & Création de compte, connexion, session et jetons d'identité. \\
+Spring Boot REST & Endpoints de santé, chat et opérations CRUD sur les conversations. \\
+MongoDB Atlas & Stockage des conversations et filtrage par identifiant Firebase. \\
+Gemini & Génération de texte conversationnel côté client si la clé est configurée. \\
+JAX-WS & Démonstration d'opérations SOAP de réponse et de résumé. \\
+\bottomrule
+\end{tabularx}
+
+\subsection*{Organisation du dépôt}
+Le code Flutter est dans \file{lib/} avec les écrans, services et modèles. Le service REST se trouve dans \file{backend-rest/}; le service SOAP dans \file{backend-soap/}. Les documents d'API et de projet sont regroupés sous \file{docs/}. Cette séparation facilite le développement des composants sans mélanger l'affichage et l'accès aux données.
+
+\newpage
+\section*{4. Client Flutter et modèle de données}
+\addcontentsline{toc}{section}{4. Client Flutter et modèle de données}
+
+\subsection*{Écrans et navigation}
+\file{AuthScreen} gère les formulaires d'inscription et de connexion. \file{AuthGate} choisit entre l'écran d'authentification et l'espace de discussion selon l'état de session. \file{ChatScreen} compose la barre latérale, le tiroir mobile, le menu d'actions et la zone de messages. Les champs et boutons d'envoi ont des états de chargement explicites.
+
+\subsection*{Gestion d'état}
+\file{AppState} étend \file{ChangeNotifier}; les widgets s'abonnent à ses changements avec Provider. La création d'un fil met à jour la sélection locale avant la requête distante. L'envoi ajoute le message utilisateur et notifie l'interface avant d'attendre le réseau. L'indicateur d'envoi est réinitialisé même lorsqu'une exception se produit.
+
+\subsection*{Modèle}
+\begin{lstlisting}
+Conversation
+  id: String
+  title: String
+  messages: List<ChatMessage>
+  updatedAt: DateTime
+
+ChatMessage
+  role: user | assistant | error
+  content: String
+  createdAt: DateTime
+\end{lstlisting}
+
+MongoDB ajoute un champ \file{userId} qui correspond au sujet du jeton Firebase. Le dépôt interroge les documents par utilisateur et par date de mise à jour. Le client encode les dates en ISO-8601 afin de conserver une représentation JSON lisible entre Flutter et Java.
+
+\subsection*{Interactions dynamiques}
+Les cartes de suggestions remplissent le champ de saisie et y placent le curseur. L'utilisateur garde le contrôle de son message avant de l'envoyer. Les messages apparaissent avec une courte transition ; l'état d'attente et les erreurs sont identifiables visuellement. Le tiroir mobile se ferme après la création ou le choix d'une conversation.
+
+\callout{\textbf{Principe :} les opérations asynchrones ne doivent pas bloquer l'affichage du texte déjà saisi. La persistance et la génération de réponse ont des retours distincts afin de signaler précisément un échec.}
+
+\newpage
+\section*{5. Services, échanges et persistance}
+\addcontentsline{toc}{section}{5. Services, échanges et persistance}
+
+\subsection*{API REST}
+Le contrôleur Spring Boot est préfixé par \file{/api}. Les routes principales sont \file{GET /api/health}, \file{POST /api/chat}, \file{GET /api/conversations}, \file{POST /api/conversations}, \file{PUT /api/conversations/\{id\}} et \file{DELETE /api/conversations/\{id\}}. Les opérations \file{/api/**} nécessitent un jeton Bearer Firebase ; la route de santé est publique.
+
+\subsection*{Données MongoDB}
+Les conversations sont stockées dans la collection \file{boot} de la base \file{Chat}. Le champ indexé \file{userId} permet de limiter les listes, modifications et suppressions au sujet du jeton courant. L'URI MongoDB est fournie par la variable d'environnement \file{MONGODB_URI} et ne doit pas être enregistrée dans le dépôt.
+
+\subsection*{Réponse conversationnelle}
+Le client tente Gemini quand \file{GEMINI_API_KEY} est présent. En cas d'échec, il essaie le backend REST si une session est active. À défaut de moteur disponible, il conserve le message utilisateur et ajoute une erreur lisible dans le fil. Les appels réseau sont limités par un délai d'attente afin d'éviter une attente indéfinie.
+
+\subsection*{État actuel du backend de chat}
+Dans le code livré, le contrôleur REST renvoie une réponse de démonstration construite à partir du sujet Firebase et du texte reçu ; il ne réalise pas lui-même d'appel à un modèle de langage. Le service SOAP renvoie une chaîne de démonstration et un résumé basé sur l'identifiant. Pour obtenir une véritable réponse générative, la clé Gemini doit être fournie au client Flutter.
+
+\subsection*{Service SOAP}
+Le contrat JAX-WS expose \file{sendMessage(message)} et \file{getConversationSummary(conversationId)}. Le serveur publie un WSDL pour permettre l'inspection et des essais avec SoapUI. Ce module illustre un échange SOAP séparé du cycle REST utilisé par l'interface Flutter.
+
+\newpage
+\section*{6. Sécurité, configuration et déploiement}
+\addcontentsline{toc}{section}{6. Sécurité, configuration et déploiement}
+
+\subsection*{Authentification et autorisation}
+Firebase Auth gère les comptes et délivre les jetons d'identité. Spring Security configure un serveur de ressources OAuth2/JWT avec l'émetteur du projet Firebase. Le contrôleur utilise le sujet JWT pour associer les conversations à l'utilisateur. Les requêtes d'un utilisateur ne doivent jamais pouvoir accéder aux documents d'un autre.
+
+\subsection*{Configuration}
+\begin{itemize}
+  \item Firebase Web : fournir les définitions \file{FIREBASE_API_KEY}, \file{FIREBASE_APP_ID}, \file{FIREBASE_MESSAGING_SENDER_ID} et \file{FIREBASE_PROJECT_ID}.
+  \item Réponses Gemini : fournir \file{GEMINI_API_KEY} au lancement Flutter.
+  \item API REST : définir \file{API_BASE_URL} si le backend n'est pas sur \file{http://localhost:8080}.
+  \item MongoDB : définir \file{MONGODB_URI} dans l'environnement du processus Spring Boot.
+\end{itemize}
+
+\subsection*{Exemple de lancement Web}
+\begin{lstlisting}
+flutter run -d chrome ^
+  --dart-define=FIREBASE_API_KEY=... ^
+  --dart-define=FIREBASE_APP_ID=... ^
+  --dart-define=FIREBASE_MESSAGING_SENDER_ID=... ^
+  --dart-define=FIREBASE_PROJECT_ID=chatboot-c4335 ^
+  --dart-define=GEMINI_API_KEY=...
+\end{lstlisting}
+
+\subsection*{Précautions}
+Les clés et URI réelles ne doivent pas être commitées dans le code ou les rapports. Les valeurs d'exemple doivent être remplacées localement. Les paramètres Firebase Web ne remplacent pas la configuration Android et inversement. En production, les secrets doivent être gérés par l'environnement de déploiement et les origines CORS doivent être restreintes aux domaines attendus.
+
+\subsection*{Démarrage des services}
+L'application Flutter peut fonctionner sur Windows, Android et Web. Le backend REST se lance avec Maven dans \file{backend-rest/}; le service SOAP avec Maven dans \file{backend-soap/}. Le backend REST dépend d'une URI MongoDB et de la configuration de l'émetteur Firebase.
+
+\newpage
+\section*{7. Vérification et qualité}
+\addcontentsline{toc}{section}{7. Vérification et qualité}
+
+\subsection*{Tests automatisés}
+Les tests Widget vérifient l'affichage de l'authentification et de l'écran d'erreur de démarrage. Les tests de navigation vérifient la création et la sélection d'une conversation sur grand écran ainsi que la fermeture du tiroir sur mobile. Un test de gestion d'état vérifie qu'en l'absence de moteur configuré, le message utilisateur reste dans le fil, qu'une erreur explicative est ajoutée et que l'état d'envoi revient à l'inactif.
+
+\subsection*{Contrôles de build}
+Le projet doit être contrôlé avec les commandes suivantes :
+\begin{lstlisting}
+flutter test
+flutter analyze
+flutter build web
+\end{lstlisting}
+Le build Web valide la compilation du client. L'analyseur Dart détecte les erreurs de types et les règles de style. Les tests exécutent les scénarios fonctionnels locaux ; ils ne remplacent pas les tests d'intégration nécessitant Firebase, MongoDB, Gemini et les serveurs démarrés.
+
+\subsection*{Essais d'intégration recommandés}
+\begin{enumerate}
+  \item vérifier l'inscription et la connexion dans Firebase Authentication ;
+  \item appeler \file{GET /api/health} et vérifier le statut \file{UP} ;
+  \item créer, lister, modifier puis supprimer une conversation avec un jeton valide ;
+  \item envoyer un message avec une clé Gemini valide et vérifier une réponse non statique ;
+  \item arrêter le backend, envoyer un message, puis vérifier l'erreur visible et l'état local ;
+  \item vérifier le comportement aux largeurs mobile et ordinateur.
+\end{enumerate}
+
+\subsection*{Diagnostic}
+Un problème de connexion Firebase concerne les options Web ou la méthode Email/Password. Une erreur REST \file{401} indique généralement un jeton manquant, expiré ou émis par un autre projet. Une réponse de démonstration du backend REST n'est pas une réponse Gemini. Une erreur de génération doit indiquer si la clé est absente, invalide ou si le service distant ne répond pas.
+
+\newpage
+\section*{8. Limites, évolutions et conclusion}
+\addcontentsline{toc}{section}{8. Limites, évolutions et conclusion}
+
+\subsection*{Limites identifiées}
+\begin{itemize}
+  \item Le endpoint REST de chat et les opérations SOAP sont des démonstrations, pas des moteurs génératifs.
+  \item La réponse Gemini dépend d'une clé fournie au moment de la compilation/lancement.
+  \item En cas d'indisponibilité MongoDB, les changements locaux ne sont pas garantis après rechargement.
+  \item Le client envoie l'historique complet à chaque demande ; une stratégie de résumé ou de limite sera nécessaire à grande échelle.
+  \item Les tests automatisés actuels sont principalement des tests widget et d'état local.
+\end{itemize}
+
+\subsection*{Évolutions proposées}
+\begin{enumerate}
+  \item déplacer l'appel Gemini dans un backend sécurisé afin de ne pas distribuer la clé au navigateur ;
+  \item ajouter une file de synchronisation locale et une reprise après reconnexion ;
+  \item introduire des tests d'intégration avec des services simulés et des contrats API ;
+  \item ajouter le streaming de réponse, l'annulation d'une génération et des états de progression plus détaillés ;
+  \item renforcer la validation serveur, la limitation de débit et les règles CORS ;
+  \item automatiser les builds et les tests dans un pipeline d'intégration continue.
+\end{enumerate}
+
+\subsection*{Conclusion}
+Chatboot fournit une base multiplateforme pour explorer un client de conversation relié à des services indépendants. La séparation Flutter, Firebase, REST, MongoDB et SOAP rend l'architecture compréhensible et extensible. L'amélioration du traitement asynchrone garantit que les saisies restent visibles et que les erreurs sont communiquées. Les prochaines étapes prioritaires sont la sécurisation côté serveur de la génération Gemini et la persistance locale résiliente.
+
+\vfill
+\callout{\textbf{Références du dépôt :} \file{README.md}, \file{lib/services/app_state.dart}, \file{lib/services/gemini_service.dart}, \file{backend-rest/src/main/java/tn/chatboot/ChatController.java}, \file{backend-soap/src/main/java/tn/chatboot/ChatService.java}.}
+
+\end{document}

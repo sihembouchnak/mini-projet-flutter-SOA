@@ -15,17 +15,19 @@ class RestService {
     String prompt,
     List<ChatMessage> history,
   ) async {
-    final response = await http.post(
-      Uri.parse('$_baseUrl/api/chat'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-      body: jsonEncode({
-        'message': prompt,
-        'history': history.map((item) => item.toJson()).toList(),
-      }),
-    );
+    final response = await http
+        .post(
+          Uri.parse('$_baseUrl/api/chat'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode({
+            'message': prompt,
+            'history': history.map((item) => item.toJson()).toList(),
+          }),
+        )
+        .timeout(const Duration(seconds: 30));
     if (response.statusCode != 200) {
       throw Exception('API REST (${response.statusCode})');
     }
@@ -34,18 +36,21 @@ class RestService {
   }
 
   static Future<List<Conversation>> getConversations(String token) async {
-    final response = await http.get(
-      Uri.parse('$_baseUrl/api/conversations'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
+    final response = await http
+        .get(
+          Uri.parse('$_baseUrl/api/conversations'),
+          headers: {'Authorization': 'Bearer $token'},
+        )
+        .timeout(const Duration(seconds: 15));
     if (response.statusCode != 200) {
       throw Exception('Chargement MongoDB (${response.statusCode})');
     }
     final items = jsonDecode(response.body) as List<dynamic>;
     return items
-        .map((item) => Conversation.fromJson(
-              Map<String, dynamic>.from(item as Map),
-            ))
+        .map(
+          (item) =>
+              Conversation.fromJson(Map<String, dynamic>.from(item as Map)),
+        )
         .toList();
   }
 
@@ -53,14 +58,16 @@ class RestService {
     String token,
     Conversation conversation,
   ) async {
-    final response = await http.post(
-      Uri.parse('$_baseUrl/api/conversations'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode(conversation.toJson()),
-    );
+    final response = await http
+        .post(
+          Uri.parse('$_baseUrl/api/conversations'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode(conversation.toJson()),
+        )
+        .timeout(const Duration(seconds: 15));
     if (response.statusCode != 201) {
       throw Exception('Création MongoDB (${response.statusCode})');
     }
@@ -73,14 +80,16 @@ class RestService {
     String token,
     Conversation conversation,
   ) async {
-    final response = await http.put(
-      Uri.parse('$_baseUrl/api/conversations/${conversation.id}'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode(conversation.toJson()),
-    );
+    final response = await http
+        .put(
+          Uri.parse('$_baseUrl/api/conversations/${conversation.id}'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode(conversation.toJson()),
+        )
+        .timeout(const Duration(seconds: 15));
     if (response.statusCode != 200) {
       throw Exception('Mise à jour MongoDB (${response.statusCode})');
     }
@@ -90,10 +99,12 @@ class RestService {
     String token,
     String conversationId,
   ) async {
-    final response = await http.delete(
-      Uri.parse('$_baseUrl/api/conversations/$conversationId'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
+    final response = await http
+        .delete(
+          Uri.parse('$_baseUrl/api/conversations/$conversationId'),
+          headers: {'Authorization': 'Bearer $token'},
+        )
+        .timeout(const Duration(seconds: 15));
     if (response.statusCode != 204) {
       throw Exception('Suppression MongoDB (${response.statusCode})');
     }

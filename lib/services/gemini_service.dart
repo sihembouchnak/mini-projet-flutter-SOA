@@ -6,6 +6,7 @@ import '../models/conversation.dart';
 
 class GeminiService {
   static const _apiKey = String.fromEnvironment('GEMINI_API_KEY');
+  static const isConfigured = _apiKey != '';
 
   static Future<String> sendMessage(
     String prompt,
@@ -20,18 +21,22 @@ class GeminiService {
       'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$_apiKey',
     );
     final contents = history
-        .map((message) => {
-              'role': message.role == 'assistant' ? 'model' : 'user',
-              'parts': [
-                {'text': message.content},
-              ],
-            })
+        .map(
+          (message) => {
+            'role': message.role == 'user' ? 'user' : 'model',
+            'parts': [
+              {'text': message.content},
+            ],
+          },
+        )
         .toList();
-    final response = await http.post(
-      uri,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'contents': contents}),
-    );
+    final response = await http
+        .post(
+          uri,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'contents': contents}),
+        )
+        .timeout(const Duration(seconds: 30));
     if (response.statusCode != 200) {
       throw Exception('API Gemini (${response.statusCode}): ${response.body}');
     }

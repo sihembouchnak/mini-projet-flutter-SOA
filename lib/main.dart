@@ -119,11 +119,11 @@ class ChatbootApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF665BFF),
-          secondary: const Color(0xFF35C9B2),
+          seedColor: const Color(0xFF246B56),
+          secondary: const Color(0xFFE78355),
           brightness: Brightness.light,
         ),
-        scaffoldBackgroundColor: const Color(0xFFF5F7FB),
+        scaffoldBackgroundColor: const Color(0xFFF7F5EF),
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
             shape: RoundedRectangleBorder(

@@ -24,13 +24,21 @@ class AppState extends ChangeNotifier {
     if (user != null) await loginFromSession(user);
   }
 
-  Future<String?> register(String email, String password, String confirmPassword) async {
+  Future<String?> register(
+    String email,
+    String password,
+    String confirmPassword,
+  ) async {
     email = email.trim().toLowerCase();
     if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)) {
       return 'Veuillez entrer une adresse email valide.';
     }
-    if (password.length < 6) return 'Le mot de passe doit contenir au moins 6 caractères.';
-    if (password != confirmPassword) return 'Les mots de passe ne correspondent pas.';
+    if (password.length < 6) {
+      return 'Le mot de passe doit contenir au moins 6 caractères.';
+    }
+    if (password != confirmPassword) {
+      return 'Les mots de passe ne correspondent pas.';
+    }
     try {
       final credential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: password);
@@ -45,8 +53,10 @@ class AppState extends ChangeNotifier {
   Future<String?> login(String email, String password) async {
     email = email.trim().toLowerCase();
     try {
-      final credential = await FirebaseAuth.instance
-          .signInWithEmailAndPassword(email: email, password: password);
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
       await loginFromSession(credential.user!);
       return null;
     } on FirebaseAuthException catch (error) {
@@ -93,8 +103,9 @@ class AppState extends ChangeNotifier {
     } catch (_) {
       conversations = [];
     }
-    selectedConversationId =
-        conversations.isEmpty ? null : conversations.first.id;
+    selectedConversationId = conversations.isEmpty
+        ? null
+        : conversations.first.id;
     notifyListeners();
   }
 
@@ -105,7 +116,9 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  Future<Conversation> createConversation([String title = 'Nouvelle conversation']) async {
+  Future<Conversation> createConversation([
+    String title = 'Nouvelle conversation',
+  ]) async {
     var conversation = Conversation(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       title: title,
@@ -119,10 +132,11 @@ class AppState extends ChangeNotifier {
     notifyListeners();
 
     if (authToken != null) {
-      conversation = await RestService.createConversation(authToken!, conversation);
-      final index = conversations.indexWhere(
-        (item) => item.id == localId,
+      conversation = await RestService.createConversation(
+        authToken!,
+        conversation,
       );
+      final index = conversations.indexWhere((item) => item.id == localId);
       if (index != -1) {
         conversations[index] = conversation;
         if (selectedConversationId == localId) {
@@ -134,8 +148,13 @@ class AppState extends ChangeNotifier {
     return conversation;
   }
 
-  Future<void> renameConversation(Conversation conversation, String title) async {
-    conversation.title = title.trim().isEmpty ? 'Nouvelle conversation' : title.trim();
+  Future<void> renameConversation(
+    Conversation conversation,
+    String title,
+  ) async {
+    conversation.title = title.trim().isEmpty
+        ? 'Nouvelle conversation'
+        : title.trim();
     conversation.updatedAt = DateTime.now();
     if (authToken != null) {
       await RestService.updateConversation(authToken!, conversation);
@@ -147,8 +166,9 @@ class AppState extends ChangeNotifier {
   Future<void> deleteConversation(Conversation conversation) async {
     conversations.removeWhere((item) => item.id == conversation.id);
     if (selectedConversationId == conversation.id) {
-      selectedConversationId =
-          conversations.isEmpty ? null : conversations.first.id;
+      selectedConversationId = conversations.isEmpty
+          ? null
+          : conversations.first.id;
     }
     if (authToken != null) {
       await RestService.deleteConversation(authToken!, conversation.id);
@@ -162,50 +182,87 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> sendMessage(String text) async {
-    if (text.trim().isEmpty || isSending) return;
+  Future<String?> sendMessage(String text) async {
+    if (text.trim().isEmpty || isSending) return null;
     final conversation = selectedConversation;
-    if (conversation == null) return;
+    if (conversation == null) return null;
     isSending = true;
-    conversation.messages.add(ChatMessage(
-      role: 'user',
-      content: text.trim(),
-      createdAt: DateTime.now(),
-    ));
+    conversation.messages.add(
+      ChatMessage(
+        role: 'user',
+        content: text.trim(),
+        createdAt: DateTime.now(),
+      ),
+    );
     conversation.updatedAt = DateTime.now();
     if (conversation.title == 'Nouvelle conversation') {
       conversation.title = text.trim().length > 32
           ? '${text.trim().substring(0, 32)}...'
           : text.trim();
     }
-    await _saveConversations();
     notifyListeners();
 
     try {
-      final reply = await RestService.sendMessage(
-        authToken!,
-        text.trim(),
-        conversation.messages,
-      ).catchError((_) => GeminiService.sendMessage(
-            text.trim(),
-            conversation.messages,
-          ));
-      conversation.messages.add(ChatMessage(
-        role: 'assistant',
-        content: reply,
-        createdAt: DateTime.now(),
-      ));
-    } catch (error) {
-      conversation.messages.add(ChatMessage(
-        role: 'assistant',
-        content: 'Erreur: $error',
-        createdAt: DateTime.now(),
-      ));
+      final reply = await _requestReply(text.trim(), conversation.messages);
+      conversation.messages.add(
+        ChatMessage(
+          role: 'assistant',
+          content: reply,
+          createdAt: DateTime.now(),
+        ),
+      );
+    } on Exception catch (error) {
+      conversation.messages.add(
+        ChatMessage(
+          role: 'error',
+          content: 'Je n’ai pas pu répondre. $error',
+          createdAt: DateTime.now(),
+        ),
+      );
     } finally {
       conversation.updatedAt = DateTime.now();
       isSending = false;
-      await _saveConversations();
       notifyListeners();
     }
+
+    try {
+      await _saveConversations();
+      return null;
+    } on Exception catch (error) {
+      return 'Réponse affichée, mais historique non synchronisé : $error';
+    }
+  }
+
+  Future<String> _requestReply(String prompt, List<ChatMessage> history) async {
+    Exception? geminiError;
+    if (GeminiService.isConfigured) {
+      try {
+        return await GeminiService.sendMessage(prompt, history);
+      } on Exception catch (error) {
+        geminiError = error;
+      }
+    }
+
+    if (authToken != null) {
+      try {
+        return await RestService.sendMessage(authToken!, prompt, history);
+      } on Exception catch (restError) {
+        if (geminiError != null) {
+          throw Exception(
+            'Gemini et le serveur REST sont indisponibles. '
+            'Gemini : $geminiError ; REST : $restError',
+          );
+        }
+        throw Exception('Le serveur REST est indisponible : $restError');
+      }
+    }
+
+    if (geminiError != null) {
+      throw Exception('Gemini est indisponible : $geminiError');
+    }
+    throw Exception(
+      'Aucun moteur de réponse n’est configuré. Ajoutez '
+      '--dart-define=GEMINI_API_KEY=VOTRE_CLE ou démarrez le backend REST.',
+    );
   }
 }
