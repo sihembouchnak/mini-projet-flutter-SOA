@@ -1,0 +1,93 @@
+openapi: 3.0.3
+info:
+  title: Chatboot REST API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+security:
+  - bearerAuth: []
+paths:
+  /api/health:
+    get:
+      security: []
+      responses:
+        '200':
+          description: Service disponible
+  /api/chat:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message:
+                  type: string
+      responses:
+        '200':
+          description: Réponse du chatbot
+        '400':
+          description: Message absent
+        '401':
+          description: Jeton manquant
+  /api/conversations:
+    get:
+      responses:
+        '200':
+          description: Liste des conversations
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+      responses:
+        '201':
+          description: Conversation créée dans MongoDB
+  /api/conversations/{id}:
+    put:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                messages:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        '200':
+          description: Conversation modifiée
+        '404':
+          description: Conversation introuvable
+    delete:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Conversation supprimée

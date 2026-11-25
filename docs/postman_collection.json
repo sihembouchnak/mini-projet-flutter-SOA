@@ -1,0 +1,204 @@
+{
+  "info": {
+    "name": "Chatboot REST Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{firebase_id_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {"key": "base_url", "value": "http://localhost:8080"},
+    {"key": "firebase_api_key", "value": ""},
+    {"key": "firebase_email", "value": ""},
+    {"key": "firebase_password", "value": ""},
+    {"key": "firebase_id_token", "value": ""},
+    {"key": "conversation_id", "value": ""}
+  ],
+  "item": [
+    {
+      "name": "Health (sans authentification)",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/health",
+        "auth": {"type": "noauth"}
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Health retourne 200', function () { pm.response.to.have.status(200); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Firebase - Inscription (optionnel, si nouvel utilisateur)",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":\"{{firebase_email}}\",\"password\":\"{{firebase_password}}\",\"returnSecureToken\":true}"
+        },
+        "url": "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={{firebase_api_key}}",
+        "auth": {"type": "noauth"}
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Firebase inscription retourne 200', function () { pm.response.to.have.status(200); });",
+              "const data = pm.response.json();",
+              "if (data.idToken) pm.collectionVariables.set('firebase_id_token', data.idToken);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Firebase - Connexion (obtenir idToken)",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":\"{{firebase_email}}\",\"password\":\"{{firebase_password}}\",\"returnSecureToken\":true}"
+        },
+        "url": "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={{firebase_api_key}}",
+        "auth": {"type": "noauth"}
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Firebase connexion retourne 200', function () { pm.response.to.have.status(200); });",
+              "const data = pm.response.json();",
+              "if (data.idToken) pm.collectionVariables.set('firebase_id_token', data.idToken);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chat",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"message\":\"Bonjour Chatboot\",\"history\":[]}"
+        },
+        "url": "{{base_url}}/api/chat"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Chat retourne 200', function () { pm.response.to.have.status(200); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Créer une conversation",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"title\":\"Test Postman\",\"messages\":[]}"
+        },
+        "url": "{{base_url}}/api/conversations"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Création retourne 201', function () { pm.response.to.have.status(201); });",
+              "const data = pm.response.json();",
+              "if (data.id) pm.collectionVariables.set('conversation_id', data.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Lister mes conversations",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/conversations"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Liste retourne 200', function () { pm.response.to.have.status(200); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Modifier la conversation créée",
+      "request": {
+        "method": "PUT",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"title\":\"Test Postman modifié\",\"messages\":[]}"
+        },
+        "url": "{{base_url}}/api/conversations/{{conversation_id}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Modification retourne 200', function () { pm.response.to.have.status(200); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Supprimer la conversation créée",
+      "request": {
+        "method": "DELETE",
+        "url": "{{base_url}}/api/conversations/{{conversation_id}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Suppression retourne 204', function () { pm.response.to.have.status(204); });"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

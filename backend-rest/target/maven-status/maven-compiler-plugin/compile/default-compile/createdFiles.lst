@@ -1,0 +1,6 @@
+tn\chatboot\ChatController.class
+tn\chatboot\SecurityConfig.class
+tn\chatboot\ChatbootApplication.class
+tn\chatboot\Conversation$Message.class
+tn\chatboot\ConversationRepository.class
+tn\chatboot\Conversation.class
